@@ -103,25 +103,27 @@ document.addEventListener('DOMContentLoaded', function(){
 
 */
 
-//Этап 6
-/*
-Сейчас ваше приложение может сохранять список дел.
-На данном этапе нужно сделать так, чтобы при запуске приложения в функции createTodoApp()
-была выполнена проверка на наличие данных в localStorage.
-Если в localStorage есть данные, то их нужно расшифровать и
-полученный массив отрисовать на экране в виде DOM-элементов списка.
-*/
+// //Этап 6
+// /*
+// Сейчас ваше приложение может сохранять список дел.
+// На данном этапе нужно сделать так, чтобы при запуске приложения в функции createTodoApp()
+// была выполнена проверка на наличие данных в localStorage.
+// Если в localStorage есть данные, то их нужно расшифровать и
+// полученный массив отрисовать на экране в виде DOM-элементов списка.
+// */
 
 //решение
 
 (function () {
+
+	let todoArr = [];
+	let key = '';
 	//создаем  и возвращаем заголовок приложения
 	function createApptitle(title) {
 		let appTitle = document.createElement('h2'); //создаем тег
 		appTitle.innerHTML = title; //заполняем тег
 		return appTitle; //возвращаем заполненный тег
 	}
-
 
 	//создаем  и возвращаем форму для создания тела
 	function createTodoItemForm() {
@@ -147,6 +149,14 @@ document.addEventListener('DOMContentLoaded', function(){
 		buttonWrapper.append(button);//добавили кнопку в контейнер
 		form.append(input);
 		form.append(buttonWrapper);
+
+		input.addEventListener('input', function () {
+			if (input.value !== "") {
+				button.disabled = false;
+			} else {
+				button.disabled = true;
+			};
+		});
 
 		return {
 			form,
@@ -181,6 +191,23 @@ document.addEventListener('DOMContentLoaded', function(){
 		doneButton.textContent = 'Готово';
 		deleteButton.classList.add('btn', 'btn-danger');
 		deleteButton.textContent = 'Удалить';
+
+		doneButton.addEventListener('click', function () {
+			item.classList.toggle('list-group-item-success');
+			doneTodo(todoArr, obj)
+
+			//todoArr.push(obj);
+			setCartData(key, todoArr);
+		});
+		deleteButton.addEventListener('click', function () {
+			if (confirm('Вы уверены?')) {
+				item.remove();
+				delTodoId(obj, todoArr);
+				remofeFromCart(obj.id, key);
+
+				setCartData(key, todoArr)
+			}
+		});
 
 		//складываем кнопки в отдельный блок
 		buttonGroup.append(doneButton);
@@ -232,19 +259,6 @@ document.addEventListener('DOMContentLoaded', function(){
 		return localStorage.setItem(key, JSON.stringify(data))
 	};
 
-	//добавляет в корзину
-	function addToCart(key, obj) {
-		//текущее состояние корзины
-		let array = getCartData(key);
-
-		//если данных по ключу в LocalStorage нет, то записываем в cart пустой массив
-		array = array ? array : [];
-
-		//добавляем в список корзины и записываем в LocalStorage
-		array.push(obj);
-		setCartData(key, array);
-	}
-
 	//удаляет из корзины
 	function remofeFromCart(id, key) {
 		//получим текущее состояние корзины и преобразуем в данные
@@ -281,10 +295,12 @@ document.addEventListener('DOMContentLoaded', function(){
 		}
 	}
 
-	function createTodoApp(container, title = 'Список дел', key) {
+	function createTodoApp(container, title = 'Список дел', listName) {
 		let todoAppTitle = createApptitle(title);
 		let todoitemForm = createTodoItemForm();
 		let todoList = createTodoList();
+
+		key = listName;
 
 		container.append(todoAppTitle);
 		container.append(todoitemForm.form);
@@ -301,9 +317,14 @@ document.addEventListener('DOMContentLoaded', function(){
 		});
 
 		//массив дел
-		let todoArr = getCartData(key);
+		todoArr = getCartData(key);
 		//проверка на случай null
 		todoArr = todoArr ? todoArr : [];
+
+		for (const itemList of todoArr) {
+			let todoItem = createTodoItem(itemList);
+			todoList.append(todoItem.item)
+		}
 
 		//браузер создает событие submit на форме по нажатию на Enter или на кнопку создания дела
 		todoitemForm.form.addEventListener('submit', function (e) {
@@ -312,13 +333,6 @@ document.addEventListener('DOMContentLoaded', function(){
 			e.preventDefault();
 
 			todoitemForm.button.disabled = true;
-			todoitemForm.form.addEventListener('input', function () {
-				if (todoitemForm.input.value) {
-					todoitemForm.button.disabled = false;
-				} else {
-					todoitemForm.button.disabled = true;
-				}
-			})
 
 			//игнорируем создание элемента, если пользователь ничего не  ввел в поле
 			if (!todoitemForm.input.value) {
@@ -333,21 +347,6 @@ document.addEventListener('DOMContentLoaded', function(){
 
 			let todoItem = createTodoItem(obj);
 
-			//добавляем обработчики на кнопки
-			todoItem.doneButton.addEventListener('click', function () {
-				todoItem.item.classList.toggle('list-group-item-success');
-				doneTodo(todoArr, obj)
-				todoArr.push(obj);
-				setCartData(key, todoArr);
-			});
-			todoItem.deleteButton.addEventListener('click', function () {
-				if (confirm('Вы уверены?')) {
-					todoItem.item.remove();
-					delTodoId(obj, todoArr);
-					remofeFromCart(obj.id, key);
-				}
-			});
-
 			todoArr.push(obj);//добавляем дело в массив
 			setCartData(key, todoArr);
 
@@ -356,50 +355,10 @@ document.addEventListener('DOMContentLoaded', function(){
 			//обнуляем значение в поле, чтобы не пришлось стирать его вручную
 			todoitemForm.input.value = '';
 
-			console.log(todoArr);
-
 		});
 	}
 
 	window.createTodoApp = createTodoApp;
 
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//решение
-
-
-//Критерии оценки
-/*
-При работе приложения в браузере не должны возникать ошибки в консоли.
-
-Список дел должен сохраняться: при обновлении страницы сохранённый список должен отображаться на экране.
-
-
-*/
-
-//решение
-
 
